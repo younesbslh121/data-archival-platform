@@ -1,0 +1,83 @@
+name: ⚡ Lambda Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lambda/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'lambda/**'
+
+env:
+  AWS_REGION: eu-west-1
+  LAMBDA_FUNCTION_NAME: data-archival-archiver
+
+jobs:
+  # ── Step 1: Lint & Test ──────────────────────────────────
+  lint-test:
+    name: 🧹 Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lambda
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8 pytest
+
+      - name: 🧹 Lint with flake8
+        run: flake8 handler.py --max-line-length=120
+
+  # ── Step 2: Package & Deploy ─────────────────────────────
+  deploy:
+    name: 🚀 Package & Deploy
+    needs: lint-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: lambda
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install dependencies into package
+        run: |
+          mkdir -p package
+          pip install -r requirements.txt -t package/
+          cp handler.py package/
+
+      - name: 🗜️ Create deployment package
+        run: |
+          cd package
+          zip -r ../lambda_deployment.zip .
+
+      - name: 🔑 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🚀 Deploy to AWS Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --zip-file fileb://lambda_deployment.zip

@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════
+# Data Archival Platform API — Configuration
+# ═══════════════════════════════════════════════
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: data-archival-api
+
+# ── AWS Configuration ──
+aws:
+  region: eu-west-1
+
+# ── Archival Settings ──
+archival:
+  s3:
+    bucket-name: data-archival-storage-dev
+  lambda:
+    function-name: data-archival-archiver
+
+# ── Actuator ──
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

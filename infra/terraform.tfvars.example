@@ -1,0 +1,20 @@
+# ── General ──
+aws_region   = "eu-west-1"
+environment  = "dev"
+project_name = "data-archival"
+
+# ── S3 Lifecycle Thresholds ──
+intelligent_tiering_days  = 30
+glacier_days              = 90
+glacier_deep_archive_days = 365
+
+# ── RDS ──
+db_name           = "archival_db"
+db_username       = "archival_admin"
+db_password       = "CHANGE_ME_USE_SECRETS_MANAGER"
+db_instance_class = "db.t3.micro"
+
+# ── Lambda ──
+lambda_timeout           = 300
+lambda_memory            = 256
+cold_data_threshold_days = 90
