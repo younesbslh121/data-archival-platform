@@ -51,3 +51,9 @@ mvnw.cmd
 # OS
 .DS_Store
 Thumbs.db
+
+# Docker / LocalStack
+volume/
+infra/.terraform.lock.hcl
+infra/.terraform.tfstate.lock.info
+lambda/run_archival.py

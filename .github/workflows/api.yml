@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'api/**'
+      - '.github/workflows/api.yml'
   pull_request:
     branches: [main]
     paths:
@@ -21,6 +22,28 @@ jobs:
       run:
         working-directory: api
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: archival_admin
+          POSTGRES_PASSWORD: password123
+          POSTGRES_DB: archival_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U archival_admin"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      localstack:
+        image: localstack/localstack
+        env:
+          LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT: 1
+        ports:
+          - 4566:4566
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -32,10 +55,20 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: 🗄️ Initialize Database
+        run: |
+          PGPASSWORD=password123 psql -h localhost -U archival_admin -d archival_db -f ../lambda/db_schema.sql
+
       - name: 🔨 Build with Maven
         run: mvn clean compile -B
 
       - name: 🧪 Run Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/archival_db
+          SPRING_DATASOURCE_USERNAME: archival_admin
+          SPRING_DATASOURCE_PASSWORD: password123
+          AWS_ENDPOINT: http://localhost:4566
+          AWS_REGION: eu-west-1
         run: mvn test -B
 
       - name: 📦 Package JAR

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'lambda/**'
+      - '.github/workflows/lambda.yml'
   pull_request:
     branches: [main]
     paths:
@@ -40,7 +41,7 @@ jobs:
       - name: 🧹 Lint with flake8
         run: flake8 handler.py --max-line-length=120
 
-  # ── Step 2: Package & Deploy ─────────────────────────────
+  # ── Step 2: Package & Deploy to LocalStack ───────────────
   deploy:
     name: 🚀 Package & Deploy
     needs: lint-test
@@ -49,6 +50,14 @@ jobs:
     defaults:
       run:
         working-directory: lambda
+
+    services:
+      localstack:
+        image: localstack/localstack
+        env:
+          LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT: 1
+        ports:
+          - 4566:4566
 
     steps:
       - name: 📥 Checkout code
@@ -70,14 +79,41 @@ jobs:
           cd package
           zip -r ../lambda_deployment.zip .
 
-      - name: 🔑 Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: 🚀 Deploy to AWS Lambda
+      - name: 🚀 Create Lambda on LocalStack
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: eu-west-1
         run: |
-          aws lambda update-function-code \
+          # Create IAM role first
+          aws --endpoint-url=http://localhost:4566 iam create-role \
+            --role-name lambda-role \
+            --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+
+          # Create the Lambda function
+          aws --endpoint-url=http://localhost:4566 lambda create-function \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+            --runtime python3.12 \
+            --handler handler.lambda_handler \
+            --role arn:aws:iam::000000000000:role/lambda-role \
             --zip-file fileb://lambda_deployment.zip
+
+          echo "✅ Lambda deployed to LocalStack successfully!"
+
+      - name: ✅ Verify Lambda Deployment
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: eu-west-1
+        run: |
+          aws --endpoint-url=http://localhost:4566 lambda list-functions \
+            --query "Functions[?FunctionName=='${{ env.LAMBDA_FUNCTION_NAME }}'].{Name:FunctionName,Runtime:Runtime}" \
+            --output table
+          echo "✅ Lambda function verified!"
+
+      - name: 💾 Upload Deployment Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: lambda/lambda_deployment.zip
+          retention-days: 7

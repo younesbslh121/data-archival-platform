@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - DEBUG=${DEBUG:-0}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT=1
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  postgres:
+    image: postgres:15
+    container_name: data-archival-postgres
+    environment:
+      POSTGRES_USER: archival_admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: archival_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  api:
+    image: maven:3.9-eclipse-temurin-17
+    container_name: data-archival-api
+    working_dir: /usr/src/app
+    command: mvn spring-boot:run
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./api:/usr/src/app
+      - maven-repo:/root/.m2
+    depends_on:
+      - postgres
+      - localstack
+
+volumes:
+  postgres-data:
+  maven-repo:

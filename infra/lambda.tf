@@ -21,15 +21,12 @@ resource "aws_lambda_function" "archiver" {
   timeout     = var.lambda_timeout
   memory_size = var.lambda_memory
 
-  vpc_config {
-    subnet_ids         = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-    security_group_ids = [aws_security_group.lambda.id]
-  }
+
 
   environment {
     variables = {
-      DB_HOST               = aws_db_instance.postgres.address
-      DB_PORT               = tostring(aws_db_instance.postgres.port)
+      DB_HOST               = "data-archival-postgres"
+      DB_PORT               = "5432"
       DB_NAME               = var.db_name
       DB_USER               = var.db_username
       DB_PASSWORD           = var.db_password
@@ -38,48 +35,19 @@ resource "aws_lambda_function" "archiver" {
     }
   }
 
-  layers = [aws_lambda_layer_version.psycopg2.arn]
 
   tags = {
     Name = "${var.project_name}-archiver"
   }
 }
 
-# ──────────────────────────────────────────────────────────────
-# Lambda Layer — psycopg2 for PostgreSQL connectivity
-# ──────────────────────────────────────────────────────────────
 
-resource "aws_lambda_layer_version" "psycopg2" {
-  layer_name          = "${var.project_name}-psycopg2"
-  description         = "psycopg2-binary for PostgreSQL access"
-  compatible_runtimes = ["python3.12"]
-
-  filename = "${path.module}/layers/psycopg2-layer.zip"
-}
 
 # ──────────────────────────────────────────────────────────────
 # CloudWatch — Scheduled Trigger (Daily at 2 AM UTC)
 # ──────────────────────────────────────────────────────────────
 
-resource "aws_cloudwatch_event_rule" "daily_archive" {
-  name                = "${var.project_name}-daily-archive"
-  description         = "Trigger archival Lambda every day at 2 AM UTC"
-  schedule_expression = "cron(0 2 * * ? *)"
-}
 
-resource "aws_cloudwatch_event_target" "lambda" {
-  rule      = aws_cloudwatch_event_rule.daily_archive.name
-  target_id = "archiver-lambda"
-  arn       = aws_lambda_function.archiver.arn
-}
-
-resource "aws_lambda_permission" "cloudwatch" {
-  statement_id  = "AllowCloudWatchInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.archiver.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.daily_archive.arn
-}
 
 # ──────────────────────────────────────────────────────────────
 # CloudWatch Log Group

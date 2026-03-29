@@ -18,17 +18,4 @@ output "lambda_function_arn" {
   value       = aws_lambda_function.archiver.arn
 }
 
-output "rds_endpoint" {
-  description = "RDS PostgreSQL endpoint"
-  value       = aws_db_instance.postgres.endpoint
-}
 
-output "rds_database_name" {
-  description = "RDS database name"
-  value       = aws_db_instance.postgres.db_name
-}
-
-output "vpc_id" {
-  description = "VPC ID"
-  value       = aws_vpc.main.id
-}

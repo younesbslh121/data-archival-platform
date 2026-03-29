@@ -3,15 +3,20 @@
 # ═══════════════════════════════════════════════
 
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
     name: data-archival-api
+  datasource:
+    url: jdbc:postgresql://data-archival-postgres:5432/archival_db
+    username: archival_admin
+    password: password123
 
 # ── AWS Configuration ──
 aws:
   region: eu-west-1
+  endpoint: http://localstack-main:4566
 
 # ── Archival Settings ──
 archival:
