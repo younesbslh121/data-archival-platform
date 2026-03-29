@@ -21,33 +21,22 @@ resource "aws_lambda_function" "archiver" {
   timeout     = var.lambda_timeout
   memory_size = var.lambda_memory
 
-
-
   environment {
     variables = {
-      DB_HOST               = "data-archival-postgres"
-      DB_PORT               = "5432"
-      DB_NAME               = var.db_name
-      DB_USER               = var.db_username
-      DB_PASSWORD           = var.db_password
-      S3_BUCKET             = aws_s3_bucket.archive.id
-      COLD_DATA_THRESHOLD   = tostring(var.cold_data_threshold_days)
+      DB_HOST             = "data-archival-postgres"
+      DB_PORT             = "5432"
+      DB_NAME             = var.db_name
+      DB_USER             = var.db_username
+      DB_PASSWORD         = var.db_password
+      S3_BUCKET           = aws_s3_bucket.archive.id
+      COLD_DATA_THRESHOLD = tostring(var.cold_data_threshold_days)
     }
   }
-
 
   tags = {
     Name = "${var.project_name}-archiver"
   }
 }
-
-
-
-# ──────────────────────────────────────────────────────────────
-# CloudWatch — Scheduled Trigger (Daily at 2 AM UTC)
-# ──────────────────────────────────────────────────────────────
-
-
 
 # ──────────────────────────────────────────────────────────────
 # CloudWatch Log Group

@@ -17,5 +17,3 @@ output "lambda_function_arn" {
   description = "ARN of the archiver Lambda function"
   value       = aws_lambda_function.archiver.arn
 }
-
-

@@ -17,13 +17,13 @@ from datetime import datetime, timedelta, timezone
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-DB_HOST     = os.environ["DB_HOST"]
-DB_PORT     = int(os.environ.get("DB_PORT", 5432))
-DB_NAME     = os.environ["DB_NAME"]
-DB_USER     = os.environ["DB_USER"]
+DB_HOST = os.environ["DB_HOST"]
+DB_PORT = int(os.environ.get("DB_PORT", 5432))
+DB_NAME = os.environ["DB_NAME"]
+DB_USER = os.environ["DB_USER"]
 DB_PASSWORD = os.environ["DB_PASSWORD"]
-S3_BUCKET   = os.environ["S3_BUCKET"]
-THRESHOLD   = int(os.environ.get("COLD_DATA_THRESHOLD", 90))
+S3_BUCKET = os.environ["S3_BUCKET"]
+THRESHOLD = int(os.environ.get("COLD_DATA_THRESHOLD", 90))
 
 s3_client = boto3.client("s3")
 
@@ -99,7 +99,10 @@ def upload_to_s3(records: list, data_type: str, batch_timestamp: str) -> str:
         },
     )
 
-    logger.info(f"Uploaded {len(records)} {data_type} records → s3://{S3_BUCKET}/{key}")
+    logger.info(
+        "Uploaded %d %s records -> s3://%s/%s",
+        len(records), data_type, S3_BUCKET, key
+    )
     return key
 
 
@@ -119,7 +122,7 @@ def archive_cold_data(data_type: str, conn) -> dict:
         rows = cur.fetchall()
 
         if not rows:
-            logger.info(f"No cold {data_type} found (threshold: {THRESHOLD} days)")
+            logger.info("No cold %s found (threshold: %d days)", data_type, THRESHOLD)
             return {"data_type": data_type, "archived_count": 0, "s3_key": None}
 
         records = [dict(zip(columns, row)) for row in rows]
@@ -132,7 +135,7 @@ def archive_cold_data(data_type: str, conn) -> dict:
         cur.execute(queries["update"], (record_ids,))
         conn.commit()
 
-        logger.info(f"Archived {len(records)} {data_type} records")
+        logger.info("Archived %d %s records", len(records), data_type)
 
         return {
             "data_type": data_type,
@@ -149,8 +152,8 @@ def lambda_handler(event, context):
     Main Lambda handler.
     Triggered by CloudWatch Events (daily) or Spring Boot API (on-demand).
     """
-    logger.info(f"Starting cold data archival — threshold: {THRESHOLD} days")
-    logger.info(f"Event: {json.dumps(event, default=str)}")
+    logger.info("Starting cold data archival - threshold: %d days", THRESHOLD)
+    logger.info("Event: %s", json.dumps(event, default=str))
 
     results = []
     conn = None
@@ -168,17 +171,17 @@ def lambda_handler(event, context):
         response = {
             "statusCode": 200,
             "body": {
-                "message": f"Archival complete — {total_archived} records processed",
+                "message": "Archival complete - %d records processed" % total_archived,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "results": results,
             },
         }
 
-        logger.info(f"Archival complete: {json.dumps(response, default=str)}")
+        logger.info("Archival complete: %s", json.dumps(response, default=str))
         return response
 
     except Exception as e:
-        logger.error(f"Archival failed: {str(e)}", exc_info=True)
+        logger.error("Archival failed: %s", str(e), exc_info=True)
         return {
             "statusCode": 500,
             "body": {"error": str(e)},
