@@ -9,21 +9,24 @@ spring:
   application:
     name: data-archival-api
   datasource:
-    url: jdbc:postgresql://data-archival-postgres:5432/archival_db
-    username: archival_admin
-    password: password123
+    url: jdbc:postgresql://${RDS_ENDPOINT:localhost:5432}/archival_db
+    username: ${DB_USERNAME:archival_admin}
+    password: ${DB_PASSWORD:password123}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
 
 # ── AWS Configuration ──
 aws:
-  region: eu-west-1
-  endpoint: http://localstack-main:4566
+  region: ${AWS_REGION:eu-north-1}
 
 # ── Archival Settings ──
 archival:
   s3:
-    bucket-name: data-archival-storage-dev
+    bucket-name: ${S3_BUCKET:data-archival-storage-dev}
   lambda:
-    function-name: data-archival-archiver
+    function-name: ${LAMBDA_FUNCTION_NAME:data-archival-archiver}
 
 # ── Actuator ──
 management:

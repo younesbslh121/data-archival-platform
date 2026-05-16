@@ -1,3 +1,7 @@
+# ──────────────────────────────────────────────────────────────
+# Terraform Configuration — Real AWS Provider
+# ──────────────────────────────────────────────────────────────
+
 terraform {
   required_version = ">= 1.5.0"
 
@@ -8,25 +12,17 @@ terraform {
     }
   }
 
-  # backend "s3" disabled for local development
+  # Remote backend for state management
+  backend "s3" {
+    bucket       = "data-archival-tf-state-690058257499"
+    key          = "data-archival-platform/terraform.tfstate"
+    region       = "eu-north-1"
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
-  region                      = var.aws_region
-  access_key                  = "test"
-  secret_key                  = "test"
-  s3_use_path_style           = true
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
-  endpoints {
-    s3             = "http://localstack-main:4566"
-    lambda         = "http://localstack-main:4566"
-    sts            = "http://localstack-main:4566"
-    iam            = "http://localstack-main:4566"
-    cloudwatch     = "http://localstack-main:4566"
-    cloudwatchlogs = "http://localstack-main:4566"
-  }
+  region = var.aws_region
 
   default_tags {
     tags = {

@@ -12,12 +12,15 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
+infra/.terraform.lock.hcl
+infra/.terraform.tfstate.lock.info
 
 # Lambda
 lambda/package/
 lambda_deployment.zip
 lambda_package.zip
-*.zip
+infra/lambda_package.zip
+infra/layers/
 
 # Python
 __pycache__/
@@ -52,8 +55,5 @@ mvnw.cmd
 .DS_Store
 Thumbs.db
 
-# Docker / LocalStack
+# Docker
 volume/
-infra/.terraform.lock.hcl
-infra/.terraform.tfstate.lock.info
-lambda/run_archival.py

@@ -37,13 +37,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      localstack:
-        image: localstack/localstack
-        env:
-          LOCALSTACK_ACKNOWLEDGE_ACCOUNT_REQUIREMENT: 1
-        ports:
-          - 4566:4566
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -59,6 +52,13 @@ jobs:
         run: |
           PGPASSWORD=password123 psql -h localhost -U archival_admin -d archival_db -f ../lambda/db_schema.sql
 
+      - name: 🔑 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
       - name: 🔨 Build with Maven
         run: mvn clean compile -B
 
@@ -67,8 +67,7 @@ jobs:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/archival_db
           SPRING_DATASOURCE_USERNAME: archival_admin
           SPRING_DATASOURCE_PASSWORD: password123
-          AWS_ENDPOINT: http://localhost:4566
-          AWS_REGION: eu-west-1
+          AWS_REGION: eu-north-1
         run: mvn test -B
 
       - name: 📦 Package JAR

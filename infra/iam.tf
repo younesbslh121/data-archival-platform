@@ -17,6 +17,10 @@ data "aws_iam_policy_document" "lambda_assume" {
 resource "aws_iam_role" "lambda" {
   name               = "${var.project_name}-lambda-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
+
+  tags = {
+    Name = "${var.project_name}-lambda-role"
+  }
 }
 
 # S3 write access — only to the archive bucket
@@ -42,13 +46,13 @@ resource "aws_iam_role_policy" "lambda_s3" {
   policy = data.aws_iam_policy_document.lambda_s3.json
 }
 
-# CloudWatch Logs
+# CloudWatch Logs — allow Lambda to write logs
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# VPC access (for RDS connectivity)
+# VPC access — allow Lambda to create ENIs in the VPC (for RDS)
 resource "aws_iam_role_policy_attachment" "lambda_vpc" {
   role       = aws_iam_role.lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"

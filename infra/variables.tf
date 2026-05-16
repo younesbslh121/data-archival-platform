@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region for all resources"
   type        = string
-  default     = "eu-west-1"
+  default     = "eu-north-1"
 }
 
 variable "environment" {
@@ -68,7 +68,7 @@ variable "db_password" {
 }
 
 variable "db_instance_class" {
-  description = "RDS instance class"
+  description = "RDS instance class (db.t3.micro is Free Tier eligible)"
   type        = string
   default     = "db.t3.micro"
 }
@@ -93,4 +93,20 @@ variable "cold_data_threshold_days" {
   description = "Number of days after which data is considered cold"
   type        = number
   default     = 90
+}
+
+# ──────────────────────────────────────────
+# Networking
+# ──────────────────────────────────────────
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "my_ip" {
+  description = "Your public IP for RDS access (CIDR format, e.g. 1.2.3.4/32)"
+  type        = string
+  default     = "0.0.0.0/0"
 }
