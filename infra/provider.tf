@@ -16,8 +16,8 @@ terraform {
   backend "s3" {
     bucket       = "data-archival-tf-state-690058257499"
     key          = "data-archival-platform/terraform.tfstate"
-    region       = "eu-north-1"
-    use_lockfile = true
+    region         = "eu-north-1"
+    dynamodb_table = "data-archival-tf-locks"
   }
 }
 
